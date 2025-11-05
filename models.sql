@@ -1,0 +1,9 @@
+-- CREATE DATABASE rotulos;
+-- CREATE TABLE labeling_guide (
+-- id SERIAL PRIMARY KEY,
+-- name_prod VARCHAR(50),
+-- lot_format VARCHAR(50),
+-- lot_detail VARCHAR(500),
+-- expiration_format VARCHAR(50),
+-- expiration_detail VARCHAR(500)
+-- );
