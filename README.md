@@ -11,16 +11,16 @@ Características:
 - Eliminar una etiqueta: Elimina una etiqueta específica de la base de datos.
 
 Tecnologías utilizadas:
-Python: Lenguaje de programación principal.
-FastAPI: Framework para construir la API.
-PostgreSQL: Base de datos relacional para almacenar las etiquetas.
-Pydantic: Validación de datos y definición de modelos.
-psycopg2: Conector para interactuar con PostgreSQL.
+- Python: Lenguaje de programación principal.
+- FastAPI: Framework para construir la API.
+- PostgreSQL: Base de datos relacional para almacenar las etiquetas.
+- Pydantic: Validación de datos y definición de modelos.
+- psycopg2: Conector para interactuar con PostgreSQL.
 
 Requisitos:
-Python 3.9 o superior
-PostgreSQL
-Entorno virtual configurado con las dependencias del archivo requirements.txt
+- Python 3.9 o superior
+- PostgreSQL
+- Entorno virtual configurado con las dependencias del archivo requirements.txt
 
 Instalación:
 
@@ -28,9 +28,9 @@ Instalación:
 git clone https://github.com/Cmpresiga/API_rotulos.git
 
 2. Crea y activa un entorno virtual:
-python -m venv env
-source env/Scripts/activate  # En Windows
-source env/bin/activate      # En Linux/Mac
+- python -m venv env
+- env/Scripts/activate  # En Windows
+- source env/bin/activate      # En Linux/Mac
 
 3. Instala las dependencias:
 pip install -r requirements.txt
@@ -41,11 +41,11 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 
 Endpoints:
-GET /labels: Obtiene todas las etiquetas.
-GET /label/{id}: Obtiene una etiqueta por su ID.
-POST /label: Crea una nueva etiqueta.
-PUT /label/{id}: Actualiza una etiqueta existente.
-DELETE /label/{id}: Elimina una etiqueta por su ID.
+- GET /labels: Obtiene todas las etiquetas.
+- GET /label/{id}: Obtiene una etiqueta por su ID.
+- POST /label: Crea una nueva etiqueta.
+- PUT /label/{id}: Actualiza una etiqueta existente.
+- DELETE /label/{id}: Elimina una etiqueta por su ID.
 
 Contribuciones:
 ¡Las contribuciones son bienvenidas! Si encuentras un problema o tienes una mejora, no dudes en abrir un issue o enviar un pull request.
