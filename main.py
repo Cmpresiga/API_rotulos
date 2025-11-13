@@ -1,13 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from database import get_connection
 from pydantic import BaseModel
-import psycopg2
-
-dbname = "rotulos"
-user = "publico"
-password = "Abcd1234"
-host = "localhost"
-port = "5432"
 
 app = FastAPI()
 
@@ -21,20 +15,13 @@ class Label(BaseModel):
 
 
 @app.get("/labels")
-def get_labels():
+async def get_labels():
     try:
-        conn = psycopg2.connect(
-            dbname=dbname,
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM labeling_guide")
-        rows = cur.fetchall()
+        conn = await get_connection()
+        rows = await conn.fetch("SELECT * FROM labeling_guide;")
+        rows = [dict(row) for row in rows]
         return JSONResponse(status_code=200, content={"data": rows})
-    except psycopg2.Error as error:
+    except Exception as error:
         print("Error establishing connection", error)
         return JSONResponse(
             status_code=500,
@@ -42,22 +29,16 @@ def get_labels():
         )
     finally:
         if conn is not None:
-            conn.close()
+            await conn.close()
 
 
 @app.get("/label/{id}")
-def get_label_by_id(id: int):
+async def get_label_by_id(id: int):
     try:
-        conn = psycopg2.connect(
-            dbname=dbname,
-            user=user,
-            password=password,
-            host=host,
-            port=port
+        conn = await get_connection()
+        row = await conn.fetchrow(
+            "SELECT * FROM labeling_guide WHERE id = $1;", id
         )
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM labeling_guide WHERE id = %s", (id,))
-        row = cur.fetchone()
 
         if row is None:
             return JSONResponse(
@@ -65,8 +46,9 @@ def get_label_by_id(id: int):
                 content={"message": "Label not found"}
             )
 
+        row = dict(row)
         return JSONResponse(status_code=200, content={"data": row})
-    except psycopg2.Error as error:
+    except Exception as error:
         print("Error establishing connection", error)
         return JSONResponse(
             status_code=500,
@@ -74,20 +56,14 @@ def get_label_by_id(id: int):
         )
     finally:
         if conn is not None:
-            conn.close()
+            await conn.close()
 
 
 @app.post("/label")
-def create_label(label: Label):
+async def create_label(label: Label):
     try:
-        conn = psycopg2.connect(
-            dbname=dbname,
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        cur = conn.cursor()
+        conn = await get_connection()
+        await conn.execute("BEGIN")
 
         insert_query = """
             INSERT INTO labeling_guide(
@@ -97,20 +73,19 @@ def create_label(label: Label):
                 expiration_format,
                 expiration_detail
             )
-            VALUES (%s, %s, %s, %s, %s)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id
         """
-        values = (
+        values = [
             label.name_prod,
             label.lot_format,
             label.lot_detail,
             label.expiration_format,
             label.expiration_detail
-        )
+        ]
 
-        cur.execute(insert_query, values)
-        new_id = cur.fetchone()[0]
-        conn.commit()
+        new_id = await conn.fetchval(insert_query, *values)
+        await conn.execute("COMMIT")
 
         return JSONResponse(
             status_code=201,
@@ -119,33 +94,30 @@ def create_label(label: Label):
                 "id": new_id
             }
         )
-    except psycopg2.Error as error:
+    except Exception as error:
         print("Error in database operation:", error)
-        conn.rollback()
+        await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while creating the label"}
         )
     finally:
         if conn is not None:
-            conn.close()
+            await conn.close()
 
 
 @app.put("/label/{id}")
-def update_label(id: int, label: Label):
+async def update_label(id: int, label: Label):
     try:
-        conn = psycopg2.connect(
-            dbname=dbname,
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        cur = conn.cursor()
+        conn = await get_connection()
+        await conn.execute("BEGIN")
 
         # First check if the label exists
-        cur.execute("SELECT id FROM labeling_guide WHERE id = %s", (id,))
-        if cur.fetchone() is None:
+        row = await conn.fetchval(
+            "SELECT id FROM labeling_guide WHERE id = $1", id
+        )
+        if row is None:
+            await conn.execute("ROLLBACK")
             return JSONResponse(
                 status_code=404,
                 content={"message": f"Label with id {id} not found"}
@@ -153,12 +125,12 @@ def update_label(id: int, label: Label):
 
         update_query = """
             UPDATE labeling_guide
-            SET name_prod = %s,
-                lot_format = %s,
-                lot_detail = %s,
-                expiration_format = %s,
-                expiration_detail = %s
-            WHERE id = %s
+            SET name_prod = $1,
+                lot_format = $2,
+                lot_detail = $3,
+                expiration_format = $4,
+                expiration_detail = $5
+            WHERE id = $6
         """
         values = (
             label.name_prod,
@@ -169,8 +141,8 @@ def update_label(id: int, label: Label):
             id
         )
 
-        cur.execute(update_query, values)
-        conn.commit()
+        await conn.execute(update_query, *values)
+        await conn.execute("COMMIT")
 
         return JSONResponse(
             status_code=200,
@@ -179,40 +151,37 @@ def update_label(id: int, label: Label):
                 "id": id
             }
         )
-    except psycopg2.Error as error:
+    except Exception as error:
         print("Error in database operation:", error)
-        conn.rollback()
+        await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while updating the label"}
         )
     finally:
         if conn is not None:
-            conn.close()
+            await conn.close()
 
 
 @app.delete("/label/{id}")
-def delete_label(id: int):
+async def delete_label(id: int):
     try:
-        conn = psycopg2.connect(
-            dbname=dbname,
-            user=user,
-            password=password,
-            host=host,
-            port=port
-        )
-        cur = conn.cursor()
+        conn = await get_connection()
+        await conn.execute("BEGIN")
 
         # First check if the label exists
-        cur.execute("SELECT id FROM labeling_guide WHERE id = %s", (id,))
-        if cur.fetchone() is None:
+        row = await conn.fetchval(
+            "SELECT id FROM labeling_guide WHERE id = $1", id
+        )
+        if row is None:
+            await conn.execute("ROLLBACK")
             return JSONResponse(
                 status_code=404,
                 content={"message": f"Label with id {id} not found"}
             )
 
-        cur.execute("DELETE FROM labeling_guide WHERE id = %s", (id,))
-        conn.commit()
+        await conn.execute("DELETE FROM labeling_guide WHERE id = $1", id)
+        await conn.execute("COMMIT")
 
         return JSONResponse(
             status_code=200,
@@ -220,13 +189,13 @@ def delete_label(id: int):
                 "message": f"Label with id {id} deleted successfully"
             }
         )
-    except psycopg2.Error as error:
+    except Exception as error:
         print("Error in database operation:", error)
-        conn.rollback()
+        await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while deleting the label"}
         )
     finally:
         if conn is not None:
-            conn.close()
+            await conn.close()
