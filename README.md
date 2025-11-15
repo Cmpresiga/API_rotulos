@@ -1,6 +1,6 @@
 API de Gestión de Etiquetas
 
-Este proyecto es una API RESTful desarrollada con FastAPI utilizando funciones SÍNCRONAS, para gestionar etiquetas de productos. Permite realizar operaciones CRUD sobre una base de datos PostgreSQL que almacena información sobre las etiquetas.
+Este proyecto es una API RESTful desarrollada con FastAPI utilizando funciones ASÍNCRONAS, para gestionar etiquetas de productos. Permite realizar operaciones CRUD sobre una base de datos PostgreSQL que almacena información sobre las etiquetas.
 El código Python cumple con los estándares de estilo establecidos por flake8 (algunos de los exigidos por el PEP8), validado automáticamente mediante pre-commit.
 
 Características:
@@ -15,7 +15,9 @@ Tecnologías utilizadas:
 - FastAPI: Framework para construir la API.
 - PostgreSQL: Base de datos relacional para almacenar las etiquetas.
 - Pydantic: Validación de datos y definición de modelos.
-- psycopg2: Conector para interactuar con PostgreSQL.
+- Asyncpg: Conector para interactuar con PostgreSQL de forma asíncrona.
+- Flake8: Linter de código.
+- Pre-commit: Validación automática de las guías de estilo flake8.
 
 Requisitos:
 - Python 3.9 o superior
@@ -35,7 +37,8 @@ git clone https://github.com/Cmpresiga/API_rotulos.git
 3. Instala las dependencias:
 pip install -r requirements.txt
 
-4. Configura tu base de datos PostgreSQL con las credenciales adecuadas.
+4. Crea la base de datos PostgreSQL y la tabla usando los comando del archivo models.sql.
+Configura el archivo database.py con las credenciales adecuadas.
 
 5. Ejecuta la aplicación:
 uvicorn main:app --reload
