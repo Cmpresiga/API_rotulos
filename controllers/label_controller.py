@@ -4,6 +4,7 @@ from models.label_model import Label
 
 
 async def get_labels():
+    conn = None
     try:
         conn = await get_connection()
         rows = await conn.fetch("SELECT * FROM labeling_guide;")
@@ -21,6 +22,7 @@ async def get_labels():
 
 
 async def get_label_by_id(id: int):
+    conn = None
     try:
         conn = await get_connection()
         row = await conn.fetchrow(
@@ -47,6 +49,7 @@ async def get_label_by_id(id: int):
 
 
 async def create_label(label: Label):
+    conn = None
     try:
         conn = await get_connection()
         await conn.execute("BEGIN")
@@ -82,7 +85,8 @@ async def create_label(label: Label):
         )
     except Exception as error:
         print("Error in database operation:", error)
-        await conn.execute("ROLLBACK")
+        if conn is not None:
+            await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while creating the label"}
@@ -93,6 +97,7 @@ async def create_label(label: Label):
 
 
 async def update_label(id: int, label: Label):
+    conn = None
     try:
         conn = await get_connection()
         await conn.execute("BEGIN")
@@ -138,7 +143,8 @@ async def update_label(id: int, label: Label):
         )
     except Exception as error:
         print("Error in database operation:", error)
-        await conn.execute("ROLLBACK")
+        if conn is not None:
+            await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while updating the label"}
@@ -149,6 +155,7 @@ async def update_label(id: int, label: Label):
 
 
 async def delete_label(id: int):
+    conn = None
     try:
         conn = await get_connection()
         await conn.execute("BEGIN")
@@ -175,7 +182,8 @@ async def delete_label(id: int):
         )
     except Exception as error:
         print("Error in database operation:", error)
-        await conn.execute("ROLLBACK")
+        if conn is not None:
+            await conn.execute("ROLLBACK")
         return JSONResponse(
             status_code=500,
             content={"message": "An error occurred while deleting the label"}
